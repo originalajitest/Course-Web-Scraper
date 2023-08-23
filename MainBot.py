@@ -26,7 +26,7 @@ with open('public_key.pem', 'rb') as key_file:
     )
 
 # Bot token
-TOKEN = 'MTEyODEwMjYzMzMxMjM3MDgzOA.GJDOSt.oAfDhJmEH7CiVzBmOP-eyzp0Zyw3uQ33-SiRrE'
+TOKEN = 'MTEyODEwMjYzMzMxMjM3MDgzOA.G5nxqk.jrkVJnKWUy0REeWsMSa-7Az3eb1QD2SmTlGCrc'
 invite = 'https://discord.com/api/oauth2/authorize?client_id=1128102633312370838&permissions=380104817664&scope=bot'
 # Above is the link for the bot
 
@@ -44,12 +44,12 @@ bot_id = 1128102633312370838
 me_id = 459744351715590173
 channels = []
 obj_links = []
-admins = [] #pull this
-blacklist = [] #pull this
-servers = [] #pull this
+admins = []
+blacklist = []
+servers = []
 url_check = 'https://courses.students.ubc.ca/cs/courseschedule?pname=subjarea&tname=subj-course&dept='
 setup = False
-tskip = 600 #might want to pull these values.
+tskip = 600
 guilds = []
 cuttime = 24 * 60 * 60
 warn = 23 * 60 * 60
@@ -57,36 +57,40 @@ warn = 23 * 60 * 60
 tab = PrettyTable(["Command", "Desc"])
 tab.add_row(["!hello", "Greetings, what do you expect it to do lol."])
 tab.add_row(["!help", "Opens this menu"])
-tab.add_row(["!link", "Returns the invite link to add the bot to a server"])
-tab.add_row(["!setup", "Allows a one time use of the !add-admin command by anyone. Can only be activated once"])
+tab.add_row(["!link", "Returns the invite link to add this bot to a server"])
+tab.add_row(["!setup", "Allows a one time use of the !add-admin: command by anyone. Can only be activated once"])
 tab.add_row(["!ping", "Ping the specified UBC server after setting it up in the channel.\nCan only be run while the"
-                      " bot is already running."])
+                      " Scrapper is already running."])
 
 tab2 = PrettyTable(["Admin Cmd", "Admin Cmd Desc"])
 tab2.add_row(["!add-admin:@---", "Adds the mentioned user to the list of admins granting authority too run all\nadmin"
                                  " commands"])
-tab2.add_row(["!status", "Check if it is possible to ping the server/run the bot"])
-tab2.add_row(["!set-lab:---", "States if there are labs or discussions in the course referred to in the url.\nDefault"
-                              " set to False"])
-tab2.add_row(["!sec", "Returns the sections already in the sections list"])
-tab2.add_row(["!set-sec:---", "Sets if there are specific sections to check for or not.\nDefault set to False"])
-tab2.add_row(["!add-sec:---", "Takes the text to the right of colon and added it to sections to check. Space\n"
-                              "sensitive (will check for space as part of the section)"])
-tab2.add_row(["!rmv-sec:---", "Takes the text to the right of colon and removes it from sections to check.\nSpace"
-                              " sensitive (will not be able to remove if not exact match with entry)"])
-tab2.add_row(["!emt-sec", "Empties the List of sections"])
-
-tab3 = PrettyTable(["Admin Cmd", "Admin Cmd Desc"])
-tab3.add_row(["!set-url:---", "Sets the ping url to specified url. Space sensitive (no spaces).\nTo specify the"
+tab2.add_row(["!scrapper", "Starts a Scrapper instance for that specific channel"])
+tab2.add_row(["!res:", "Restarts a Scrapper instance based on the return from the !hash command."])
+tab2.add_row(["!end", "Ends the Scrapper instance for that specific channel"])
+tab2.add_row(["!hash", "Returns a runable command to restart the Scrapper instancefrom any channel\nif the bot goes"
+                       "down or you need to change channels"])
+tab2.add_row(["!status", "Check if it is possible to ping the server/run the Scrapper"])
+tab2.add_row(["!set-url:---", "Sets the ping url to specified url. Space sensitive (no spaces).\nTo specify the"
                               " Okanagan campus add &campuscd=UBCO to the end of the url.\nWill not work with url's"
                               " outside of ubc."])
-tab3.add_row(["!set-role:@---", "Takes the first role mentioned and sets it to ping given role when the course\ngets"
+tab2.add_row(["!set-lab:---", "States if there are labs/discussions in the course. Default set to False"])
+tab2.add_row(["!set-role:@---", "Takes the first role mentioned and sets it to ping given role when the course\ngets"
                                 " some space"])
+
+tab3 = PrettyTable(["Admin Cmd", "Admin Cmd Desc"])
+tab3.add_row(["!sec", "Returns the sections already in the sections list"])
+tab3.add_row(["!set-sec:---", "Sets if there are specific sections to check for or not. Default set to False"])
+tab3.add_row(["!add-sec:---", "Takes the text to the right of colon and added it to sections to check. Space\n"
+                              "sensitive (checks for space as part of the section)"])
+tab3.add_row(["!rmv-sec:---", "Takes the text to the right of colon and removes it from sections to check.\nSpace"
+                              " sensitive (will not be able to remove if not exact match with entry)"])
+tab3.add_row(["!emt-sec", "Empties the List of sections"])
 tab3.add_row(["!restricted:---", "Sets whether to include when given course has restricted space.\nDefault set to"
                                  " False"])
-tab3.add_row(["!waitlist:---", "Sets it the program should return waitlists for courses.\nDefault set to False"])
-tab3.add_row(["!run", "Runs the bot. It will ping the server again after 10 mins have passed until\nthere is space or"
-                      " the bot is stopped."])
+tab3.add_row(["!waitlist:---", "Sets it the program should return waitlists for courses. Default set to False"])
+tab3.add_row(["!run", "Runs the bot. It will ping the server every 10 mins until\nthere is space or the bot is"
+                      " stopped."])
 tab3.add_row(["!stop", "Stops the bot"])
 
 
@@ -131,16 +135,15 @@ async def on_guild_join(guild):
     i = 0
     while True:
         try:
-            await guild.text_channels[i].send("Hello, this is a bot designed to scrap course information and"
-                    " availability from its website.\nIn order to use, first you need to set the url to the desired"
-                    " location, then give the bot a role which it should ping when there is availability.\nYou should"
-                    " further specify if there are labs or dscussions included on the page.\nYou can further specify"
-                    " which sections to checks so that you do not recieve a ping for each open space.\nThen you just"
-                    " need to run the !run command to start the bot\nCurrently the bot is configured to run itself"
-                    " every 10 minutes, in order to propose changes please get in contact with the bot creator.\nYou"
-                    " can run a different instance of the bot in a separate channel hence allowing for multiple course"
-                    " scrappers.\nTo find the runable commands run !help.\nMost commands require you to be an admin"
-                    " for the bot to run, check !help.")
+            await guild.text_channels[i].send("Hello, this is a bot designed to scrap course information & availability"
+                    " from UBC website.\nIn order to use, first start a Scrapper instance using !scrapper.\n Then"
+                    " set the url to the course overview url using \"!set-url:---\", assign the bot a role to ping"
+                    " when there is space using \"!set-role:---\".\nYou should further specify if there are"
+                    " labs/dscussions included on the page.\nYou can further specify which sections to check.\nThen"
+                    " you just need to run Scrapper using then \"!run\" command.\nThe bot is will run itself every 10"
+                    " minutes.\nYou can run a different instance of the bot in a separate channel allowing for multiple"
+                    " course Scrappers.\nTo find all runable commands run !help.\n\nIn order to any propose changes,"
+                    " please get in contact with the bot creator.")
             print(f"Bot added to {guild}")
             break
         except discord.errors.Forbidden:
@@ -172,9 +175,10 @@ async def on_message(message):
     # await message.channel.send(message.content)
 
     if msg[:1] == "!":
+        global admins, blacklist
         # Core highest commands
         if bypass:
-            global admins, blacklist, servers
+            global servers
             if "!!!time:" == msg[:8]:
                 global tskip
                 tskip = int(msg[8:])
@@ -227,6 +231,8 @@ async def on_message(message):
                 await message.channel.send("!!!black:" + str(blacklist))
             elif "!!!pull3" == msg:
                 await message.channel.send("!!!servers:" + str(servers))
+            elif "!!!pull4" == msg:
+                await message.channel.send(f"!!!times:{tskip},{cuttime},{warn}")
             elif "!!!reinnstate:" == msg[:14]:
                 admins = ast.literal_eval(msg[14:])
                 await message.channel.send("Admins back.")
@@ -236,6 +242,12 @@ async def on_message(message):
             elif "!!!servers:" == msg[:11]:
                 servers = ast.literal_eval(msg[11:])
                 await message.channel.send("Servers with setup used back.")
+            elif "!!!times:" == msg[:9]:
+                split = msg[9:].split(",")
+                tskip = split[0]
+                cuttime = split[1]
+                warn = split[2]
+                await message.channel.send("Timings in place.")
 
         # Everyone commands
         if "!hello" == msg:
@@ -347,9 +359,9 @@ async def on_message(message):
                         obj.set_url(message.content[9:])
                         await message.channel.send("URL set to: " + obj.url)
                     else:
-                        await message.channel.send("This bot only supports UBC courses as of now, or the input is in an "
-                                                   "incorrect format. An example input would be: !set-url:"
-                                                   "https://courses.students.ubc.ca/cs/courseschedule?pname=subjarea&tname="
+                        await message.channel.send("This bot only supports UBC courses as of now, or the input is in an"
+                                                   " incorrect format. An example input would be: !set-url:"
+                                            "https://courses.students.ubc.ca/cs/courseschedule?pname=subjarea&tname="
                                                    "subj-course&dept=MATH&course=100)\nNot this only works with course"
                                                    " overview not a specific section. Please do not insert spaces.")
 
