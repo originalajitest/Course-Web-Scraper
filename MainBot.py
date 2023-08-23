@@ -26,7 +26,7 @@ with open('public_key.pem', 'rb') as key_file:
     )
 
 # Bot token
-TOKEN = 'MTEyODEwMjYzMzMxMjM3MDgzOA.G5nxqk.jrkVJnKWUy0REeWsMSa-7Az3eb1QD2SmTlGCrc'
+TOKEN = ''
 invite = 'https://discord.com/api/oauth2/authorize?client_id=1128102633312370838&permissions=380104817664&scope=bot'
 # Above is the link for the bot
 
