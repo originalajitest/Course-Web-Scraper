@@ -68,11 +68,11 @@ tab2.add_row(["!add-admin:@---", "Adds the mentioned user to the list of admins 
 tab2.add_row(["!scrapper", "Starts a Scrapper instance for that specific channel"])
 tab2.add_row(["!res:", "Restarts a Scrapper instance based on the return from the !hash command."])
 tab2.add_row(["!end", "Ends the Scrapper instance for that specific channel"])
-tab2.add_row(["!hash", "Returns a runable command to restart the Scrapper instancefrom any channel\nif the bot goes"
+tab2.add_row(["!hash", "Returns a runnable command to restart the Scrapper instance from any channel\nif the bot goes"
                        "down or you need to change channels"])
 tab2.add_row(["!status", "Check if it is possible to ping the server/run the Scrapper"])
 tab2.add_row(["!set-url:---", "Sets the ping url to specified url. Space sensitive (no spaces).\nTo specify the"
-                              " Okanagan campus add &campuscd=UBCO to the end of the url.\nWill not work with url's"
+                              " Okanagan campus add &campuscd=UBCO to the end of the url.\nWill not work with urls'"
                               " outside of ubc."])
 tab2.add_row(["!set-lab:---", "States if there are labs/discussions in the course. Default set to False"])
 tab2.add_row(["!set-role:@---", "Takes the first role mentioned and sets it to ping given role when the course\ngets"
@@ -88,8 +88,8 @@ tab3.add_row(["!rmv-sec:---", "Takes the text to the right of colon and removes 
 tab3.add_row(["!emt-sec", "Empties the List of sections"])
 tab3.add_row(["!restricted:---", "Sets whether to include when given course has restricted space.\nDefault set to"
                                  " False"])
-tab3.add_row(["!waitlist:---", "Sets it the program should return waitlists for courses. Default set to False"])
-tab3.add_row(["!run", "Runs the bot. It will ping the server every 10 mins until\nthere is space or the bot is"
+tab3.add_row(["!waitlist:---", "Sets it the program should return Waitlists' for courses. Default set to False"])
+tab3.add_row(["!run", "Runs the bot. It will ping the server every 10 minutes until\nthere is space or the bot is"
                       " stopped."])
 tab3.add_row(["!stop", "Stops the bot"])
 
@@ -104,7 +104,7 @@ async def on_ready():
         i = 0
         while True:
             try:
-                await guild.text_channels[i].send("Please set up the bot again, it went down for maintainance")
+                await guild.text_channels[i].send("Please set up the bot again, it went down for maintenance")
                 break
             except discord.errors.Forbidden:
                 i += 1
@@ -139,10 +139,10 @@ async def on_guild_join(guild):
                     " from UBC website.\nIn order to use, first start a Scrapper instance using !scrapper.\n Then"
                     " set the url to the course overview url using \"!set-url:---\", assign the bot a role to ping"
                     " when there is space using \"!set-role:---\".\nYou should further specify if there are"
-                    " labs/dscussions included on the page.\nYou can further specify which sections to check.\nThen"
+                    " labs/discussions included on the page.\nYou can further specify which sections to check.\nThen"
                     " you just need to run Scrapper using then \"!run\" command.\nThe bot is will run itself every 10"
                     " minutes.\nYou can run a different instance of the bot in a separate channel allowing for multiple"
-                    " course Scrappers.\nTo find all runable commands run !help.\n\nIn order to any propose changes,"
+                    " course Scrappers.\nTo find all runnable commands run !help.\n\nIn order to any propose changes,"
                     " please get in contact with the bot creator.")
             print(f"Bot added to {guild}")
             break
@@ -226,14 +226,14 @@ async def on_message(message):
                 warn = cuttime - 3600
                 await message.reply(f"Garbage time changed to {t} days or {cuttime} seconds.")
             elif "!!!pull1" == msg:
-                await message.channel.send("!!!reinnstate:" + str(admins))
+                await message.channel.send("!!!reinstate:" + str(admins))
             elif "!!!pull2" == msg:
                 await message.channel.send("!!!black:" + str(blacklist))
             elif "!!!pull3" == msg:
                 await message.channel.send("!!!servers:" + str(servers))
             elif "!!!pull4" == msg:
                 await message.channel.send(f"!!!times:{tskip},{cuttime},{warn}")
-            elif "!!!reinnstate:" == msg[:14]:
+            elif "!!!reinstate:" == msg[:14]:
                 admins = ast.literal_eval(msg[14:])
                 await message.channel.send("Admins back.")
             elif "!!!black:" == msg[:9]:
@@ -272,9 +272,9 @@ async def on_message(message):
                 await message.channel.send("The !add-admin:@--- command is available for a one time use by anyone.")
 
         elif channels.__contains__(channel) and "!ping" == msg:
-            tempobj = obj_links[channels.index(channel)]
-            if tempobj.running:
-                await _once_(tempobj, message)
+            temp = obj_links[channels.index(channel)]
+            if temp.running:
+                await _once_(temp, message)
 
         elif "!add-admin:" == msg[:11]:
             if setup:
@@ -340,7 +340,7 @@ async def on_message(message):
                 elif "!hash" == msg:
                     temp = obj.restart()
                     if temp is True:
-                        await message.channel.send("The scrpper is not ready to be run, hence cannot generate a code.")
+                        await message.channel.send("The Scrapper is not ready to be run, hence cannot generate a code.")
                     else:
                         val = temp.hex()
                         val = "!res:" + val
@@ -353,7 +353,7 @@ async def on_message(message):
                         await message.channel.send("Not Ready")
 
                 elif "!set-url:" == msg[:9]:
-                    # To get into the okanagan website add &campuscd=UBCO. like wise for the van website &campuscd=UBC
+                    # To get into the Okanagan website add &campuscd=UBCO. like wise for the van website &campuscd=UBC
                     if url_check in msg[9:97]:
                         await message.channel.send("UBC course url found")
                         obj.set_url(message.content[9:])
@@ -638,14 +638,14 @@ class Scrapper(object):
     # def print(self):
     #     print(f"Channel: \t {self.chan}")
     #     print(self.chan)
-    #     # I am not dealing with the channel, so I just need to idnore this.
+    #     # I am not dealing with the channel, so I just need to ignore this.
     #     # The following are good to go
     #     print(f"Url: \t {self.url}")
     #     print(f"Labs: \t {self.labs}")
     #     print(f"Specific: \t {self.specific}")
     #     print(f"Sections: \t {self.sections}")
     #     print(f"Ready: \t {self.ready}")
-    #     print(f"Keep Resticted: \t {self.keep_restricted}")
+    #     print(f"Keep Restricted: \t {self.keep_restricted}")
     #     print(f"Role: \t {self.role}")
     #     print(f"Waitlist: \t {self.waitlist}")
     #     print(f"UBCO: \t {self.ubco}")
