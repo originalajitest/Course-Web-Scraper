@@ -7,6 +7,7 @@ import time
 import asyncio
 import binascii
 import ast
+import logging
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives import hashes
@@ -29,6 +30,11 @@ with open('public_key.pem', 'rb') as key_file:
 TOKEN = ''
 invite = 'https://discord.com/api/oauth2/authorize?client_id=1128102633312370838&permissions=380104817664&scope=bot'
 # Above is the link for the bot
+
+# Logging data
+logging.basicConfig(filename="scrapper.log", filemode="a", format="%(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S", level=logging.INFO)
+logging.info('')
+logging.info('')
 
 intents = discord.Intents.default()
 intents.messages = True
@@ -96,15 +102,15 @@ tab3.add_row(["!stop", "Stops the bot"])
 
 @client.event
 async def on_ready():
-    print("Bot Running")
-    print(f'Logged in as {client.user.name} ({client.user.id})')
+    logging.info('Bot Start Up')
+    logging.info(f'Logged in as {client.user.name} ({client.user.id})')
     global guilds
     for guild in client.guilds:
         guilds.append(guild)
         i = 0
         while True:
             try:
-                await guild.text_channels[i].send("Please set up the bot again, it went down for maintenance")
+                await guild.text_channels[i].send("Please set up the scrapping instances again. The bot was down for maintenance")
                 break
             except discord.errors.Forbidden:
                 i += 1
@@ -114,11 +120,13 @@ async def on_ready():
 
 # Garbage collector, removes all scrapper instances unless used in last 1 day, based on values.
 async def garbage():
+    logging.info('Garbage Collector Started')
     while True:
         curr = time.time()
         for obj in obj_links:
             gap = curr - obj.lasttime
             if gap > cuttime:
+                logging.info(f'Terminating Scrapping Instance: {obj.chan}')
                 await obj.chan.send("This scrapper instance has been closed.")
                 place = obj_links.index(obj)
                 del channels[place]
@@ -133,6 +141,7 @@ async def on_guild_join(guild):
     global guilds
     guilds.append(guild)
     i = 0
+    logging.info(f'Joined new Guild: {guild}')
     while True:
         try:
             await guild.text_channels[i].send("Hello, this is a bot designed to scrap course information & availability"
@@ -144,7 +153,6 @@ async def on_guild_join(guild):
                     " minutes.\nYou can run a different instance of the bot in a separate channel allowing for multiple"
                     " course Scrappers.\nTo find all runnable commands run !help.\n\nIn order to any propose changes,"
                     " please get in contact with the bot creator.")
-            print(f"Bot added to {guild}")
             break
         except discord.errors.Forbidden:
             i += 1
@@ -154,7 +162,7 @@ async def on_guild_join(guild):
 async def on_guild_remove(guild):
     global guilds
     guilds.remove(guild)
-    print(f"Bot was removed from server: {guild}")
+    logging.info(f'Removed from Guild: {guild}')
 
 
 @client.event
@@ -164,7 +172,7 @@ async def on_message(message):
     bypass = False
     if message.author.id == me_id:
         bypass = True
-    channel = message.channel.id
+    channel = message.channel
     msg = message.content.lower()
 
     global channels, obj_links, servers, setup, guilds, blacklist
@@ -182,19 +190,21 @@ async def on_message(message):
             if "!!!time:" == msg[:8]:
                 global tskip
                 tskip = int(msg[8:])
-                print("Time loop changed to: ")
+                logging.info(f'High  Com.     Check time changed to: {tskip}')
                 await message.reply("Rest time set to: " + str(tskip))
             elif "!!!rmv:" == msg[:7]:
                 if admins.__contains__(message.mentions[0].id):
                     admins.remove(message.mentions[0].id)
-                    print(f"{message.mentions[0].name} ({message.mentions[0].id}) has been removed from admin list.")
+                    logging.info(f'High  Com.     Admin Removal: {message.mentions[0].name} ({message.mentions[0].id})')
             elif "!!!broadcast:" == msg[:13]:
+                logging.info(f'High  Com.     Broadcast: {msg[13:]}')
                 for guild in guilds:
                     i = 0
                     while True:
                         try:
                             await guild.text_channels[i].send("Message from admin >>>\n" + message.content[13:])
                             await message.channel.send(f"Message sent to server: {guild.name} ({guild.id})")
+                            logging.info(f'High  Com.     Broadcast sent to {guild.name} ({guild.id})')
                             break
                         except discord.errors.Forbidden:
                             i += 1
@@ -203,51 +213,64 @@ async def on_message(message):
                 obj_links = []
                 servers = []
                 setup = False
+                logging.info(f'High  Com.     All flushed')
                 await on_ready()
             elif "!!!blacklist:" == msg[:13]:
                 for user in message.mentions:
                     if admins.__contains__(user.id):
                         admins.remove(user.id)
                         await message.reply(user.name + " removed from admins")
+                        logging.info(f'High  Com.     Admin Removal: {user.name} ({user.id})')
                     if blacklist.__contains__(user.id):
                         await message.reply(user.name + " already in blacklist")
                     else:
                         blacklist.append(user.id)
                         await message.reply(user.name + " added to blacklist")
+                        logging.info(f'High  Com.     Blacklist Addition: {user.name} ({user.id})')
             elif "!!!whitelist:" == msg[:13]:
                 for user in message.mentions:
                     if blacklist.__contains__(user.id):
                         blacklist.remove(user.id)
-                        await message.reply(user.name + " removed from whitelist")
+                        await message.reply(user.name + " removed from blacklist")
+                        logging.info(f'High  Com.     Blacklist Removal: {user.name} ({user.id})')
             elif "!!!gtime:" == msg[:9]:
                 t = float(msg[9:])
                 global cuttime, warn
                 cuttime = t * 24 * 60 * 60
                 warn = cuttime - 3600
                 await message.reply(f"Garbage time changed to {t} days or {cuttime} seconds.")
+                logging.info(f'High  Com.     Garbage time: {t} days / {cuttime} seconds')
             elif "!!!pull1" == msg:
                 await message.channel.send("!!!reinstate:" + str(admins))
+                logging.info(f'High  Com.     Pull1 Admins Called')
             elif "!!!pull2" == msg:
                 await message.channel.send("!!!black:" + str(blacklist))
+                logging.info(f'High  Com.     Pull2 Blacklist Called')
             elif "!!!pull3" == msg:
                 await message.channel.send("!!!servers:" + str(servers))
+                logging.info(f'High  Com.     Pull3 Guilds Called')
             elif "!!!pull4" == msg:
                 await message.channel.send(f"!!!times:{tskip},{cuttime},{warn}")
+                logging.info(f'High  Com.     Pull4 Application times Called')
             elif "!!!reinstate:" == msg[:14]:
                 admins = ast.literal_eval(msg[14:])
                 await message.channel.send("Admins back.")
+                logging.info(f'High  Com.     Reinstate Admins')
             elif "!!!black:" == msg[:9]:
                 blacklist = ast.literal_eval(msg[9:])
                 await message.channel.send("Blacklist back")
+                logging.info(f'High  Com.     Reinistate Blacklist')
             elif "!!!servers:" == msg[:11]:
                 servers = ast.literal_eval(msg[11:])
                 await message.channel.send("Servers with setup used back.")
+                logging.info(f'High  Com.     Reinstate Guilds')
             elif "!!!times:" == msg[:9]:
                 split = msg[9:].split(",")
                 tskip = split[0]
                 cuttime = split[1]
                 warn = split[2]
                 await message.channel.send("Timings in place.")
+                logging.info(f'High  Com.     Reinstate Times')
 
         # Everyone commands
         if "!hello" == msg:
@@ -270,6 +293,7 @@ async def on_message(message):
             else:
                 setup = True
                 await message.channel.send("The !add-admin:@--- command is available for a one time use by anyone.")
+                logging.info(f'Gen.  Com.     Setup Called {message.guild} ({message.guild.id}) by {message.author.name} ({message.author.id})')
 
         elif channels.__contains__(channel) and "!ping" == msg:
             temp = obj_links[channels.index(channel)]
@@ -282,9 +306,9 @@ async def on_message(message):
                 for user in message.mentions:
                     if not (admins.__contains__(user.id) and blacklist.__contains__(user.id)):
                         admins.append(user.id)
-                        user_name = user.name
                         await message.channel.send(f"<@{user.id}> added to admins.")
-                        print(user_name + " added to admins")
+                        logging.info(f'Gen.  Com.     {message.author.name} ({message.author.id}) Setup One time user, {message.guild.name} ' +
+                                     f'({message.guild.id}); Admin Addition: {user.name} ({user.id})')
                         admin = True
                 if admin:
                     servers.append(message.guild.id)
@@ -293,9 +317,8 @@ async def on_message(message):
                 for user in message.mentions:
                     if not (admins.__contains__(user.id) and blacklist.__contains__(user.id)):
                         admins.append(user.id)
-                        user_name = user.name
                         await message.channel.send(f"<@{user.id}> added to admins.")
-                        print(user_name + " added to admins")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Admin Addition: {user.name} ({user.id})')
             else:
                 await message.reply("You do not have sufficient permissions")
 
@@ -305,7 +328,7 @@ async def on_message(message):
                 if channels.__contains__(channel):
                     await message.channel.send("This channel already has a scrapper, run !end to end it")
                 else:
-                    print(f"Created scrapper instance for channel ({channel})")
+                    logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Creating Scrapping Instance: {channel}')
                     await message.channel.send("Created scrapper instance for channel")
                     channels.append(channel)
                     obj_links.append(Scrapper(message.channel, ''))
@@ -324,6 +347,8 @@ async def on_message(message):
                         temp = str(result)[2:][:-1]
                         obj_links.append(Scrapper(message.channel, temp))
                         await message.channel.send("Instance recalled. Scrapper ready to run.")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Restarting Scrapping Instance: {channel} with' +
+                                     f' inputs: {result}')
 
             elif channels.__contains__(channel):
                 place = channels.index(channel)
@@ -333,6 +358,7 @@ async def on_message(message):
                     del channels[place]
                     del obj_links[place]
                     await message.channel.send("Scrapper instance for channel closed")
+                    logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Closing scrapping instance {channel}')
 
                 # elif "!print" == msg:
                 #     obj.print()
@@ -358,6 +384,7 @@ async def on_message(message):
                         await message.channel.send("UBC course url found")
                         obj.set_url(message.content[9:])
                         await message.channel.send("URL set to: " + obj.url)
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan}; URL Changed: {obj.url}')
                     else:
                         await message.channel.send("This bot only supports UBC courses as of now, or the input is in an"
                                                    " incorrect format. An example input would be: !set-url:"
@@ -369,9 +396,11 @@ async def on_message(message):
                     if "false" in msg:
                         obj.set_lab(False)
                         await message.channel.send("Labs/Discussions: False")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Lab Set to: False')
                     elif "true" in msg:
                         obj.set_lab(True)
                         await message.channel.send("Labs/Discussions: True")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Lab Set to: True')
                     else:
                         await message.channel.send("Invalid input")
 
@@ -382,37 +411,45 @@ async def on_message(message):
                     if "false" in msg:
                         obj.set_sec(False)
                         await message.channel.send("Specific Sections: False")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Section Checks Set to: False')
                     elif "true" in msg:
                         obj.set_sec(True)
                         await message.channel.send("Specific Sections: True")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Section Checks Set to: True')
                     else:
                         await message.channel.send("Invalid input")
 
                 elif "!add-sec:" == msg[:9]:
                     obj.add_sec(message.content[9:])
                     await message.channel.send(msg[9:] + " added to included sections")
+                    logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Section Added: {msg[9:]}')
 
                 elif "!rmv-sec:" == msg[:9]:
                     if obj.rmv_sec(message.content[9:]):
                         await message.channel.send(msg[9:] + " removed from included sections")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Section Removed: {msg[9:]}')
                     else:
                         await message.channel.send(msg[9:] + " section does not exist in list")
 
                 elif "!emt-sec" == msg[:8]:
                     obj.emt_sec()
                     await message.channel.send("Sections list has been emptied")
+                    logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Sections Emptied')
 
                 elif "!set-role:" == msg[:10]:
                     obj.set_role(message.role_mentions[0])
                     await message.channel.send("Role ping changed to: " + obj.role)
+                    logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Role Ping: {obj.role}')
 
                 elif "!restricted:" == msg[:12]:
                     if "false" in msg:
                         obj.set_restricted(False)
                         await message.channel.send("Return Restricted: False")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Restricted: False')
                     elif "true" in msg:
                         obj.set_restricted(True)
                         await message.channel.send("Return Restricted: True")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Restricted: True')
                     else:
                         await message.channel.send("Invalid input")
 
@@ -420,9 +457,11 @@ async def on_message(message):
                     if "false" in msg:
                         obj.set_waitlist(True)
                         await message.channel.send("Waitlists: False")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Waitlist: False')
                     elif "true" in msg:
                         obj.set_waitlist(False)
                         await message.channel.send("Waitlists: True")
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Waitlist: True')
                     else:
                         await message.channel.send("Invalid input")
 
@@ -430,9 +469,11 @@ async def on_message(message):
                     if obj.cur_status():
                         obj.running = True
                         await _main_(obj, message)
+                        logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Running')
 
                 elif "!stop" == msg:
                     obj.running = False
+                    logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Channel {obj.chan} Stopped')
         else:
             await message.channel.reply("This Command does not exist or you do not have sufficient privileges.")
 
@@ -490,7 +531,6 @@ async def _main_(obj, message):
         obj.lasttime = time.time()
         if obj.empty():
             await obj.chan.send("No changes to course.")
-            print("No change to course: " + obj.role)
         else:
             await ping(obj, message)
             i = 0
@@ -500,6 +540,7 @@ async def _main_(obj, message):
                 i += 1
             await obj.chan.send(t)
             obj.running = False
+            logging.info(f'               Channel {obj.chan}; Role {obj.role}; Instance found. Stopping Bot...')
         if obj.running:
             await asyncio.sleep(tskip)
             # change this to change frequency of pings
@@ -507,7 +548,6 @@ async def _main_(obj, message):
 
 async def ping(obj, message):
     role = discord.utils.get(message.guild.roles, name=obj.role)
-    print("Role: " + str(role) + ". Pinged on update to course. Loop stopped, restart required.")
     if role:
         await message.channel.send(f'{role.mention}')
 
@@ -516,7 +556,6 @@ async def ping(obj, message):
 # await message.channel.send("One msg (message.content)" + message.content)
 
 # Web Scrapping code, copied to not have multiple files.
-
 
 class Scrapper(object):
     chan = None

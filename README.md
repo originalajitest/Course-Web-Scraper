@@ -13,6 +13,7 @@ This python bot scraps the data from the UBC course website and return which cou
 <li>asyncio.py</li>
 <li>binascii.py</li>
 <li>ast.py</li>
+<li>logging.py</li>
 <li>cryptography.py</li>
 </ul>
 
