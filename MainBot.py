@@ -32,7 +32,7 @@ invite = 'https://discord.com/api/oauth2/authorize?client_id=1128102633312370838
 # Above is the link for the bot
 
 # Logging data
-logging.basicConfig(filename="scrapper.log", filemode="a", format="%(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S", level=logging.INFO)
+logging.basicConfig(filename="scraper.log", filemode="a", format="%(asctime)s - %(message)s", datefmt="%d-%b-%y %H:%M:%S", level=logging.INFO)
 logging.info('')
 logging.info('')
 
@@ -66,17 +66,17 @@ tab.add_row(["!help", "Opens this menu"])
 tab.add_row(["!link", "Returns the invite link to add this bot to a server"])
 tab.add_row(["!setup", "Allows a one time use of the !add-admin: command by anyone. Can only be activated once"])
 tab.add_row(["!ping", "Ping the specified UBC server after setting it up in the channel.\nCan only be run while the"
-                      " Scrapper is already running."])
+                      " Scraper is already running."])
 
 tab2 = PrettyTable(["Admin Cmd", "Admin Cmd Desc"])
 tab2.add_row(["!add-admin:@---", "Adds the mentioned user to the list of admins granting authority too run all\nadmin"
                                  " commands"])
-tab2.add_row(["!scrapper", "Starts a Scrapper instance for that specific channel"])
-tab2.add_row(["!res:", "Restarts a Scrapper instance based on the return from the !hash command."])
-tab2.add_row(["!end", "Ends the Scrapper instance for that specific channel"])
-tab2.add_row(["!hash", "Returns a runnable command to restart the Scrapper instance from any channel\nif the bot goes"
+tab2.add_row(["!scraper", "Starts a Scraper instance for that specific channel"])
+tab2.add_row(["!res:", "Restarts a Scraper instance based on the return from the !hash command."])
+tab2.add_row(["!end", "Ends the Scraper instance for that specific channel"])
+tab2.add_row(["!hash", "Returns a runnable command to restart the Scraper instance from any channel\nif the bot goes"
                        "down or you need to change channels"])
-tab2.add_row(["!status", "Check if it is possible to ping the server/run the Scrapper"])
+tab2.add_row(["!status", "Check if it is possible to ping the server/run the Scraper"])
 tab2.add_row(["!set-url:---", "Sets the ping url to specified url. Space sensitive (no spaces).\nTo specify the"
                               " Okanagan campus add &campuscd=UBCO to the end of the url.\nWill not work with urls'"
                               " outside of ubc."])
@@ -118,7 +118,7 @@ async def on_ready():
     await garbage()
 
 
-# Garbage collector, removes all scrapper instances unless used in last 1 day, based on values.
+# Garbage collector, removes all scraper instances unless used in last 1 day, based on values.
 async def garbage():
     logging.info('Garbage Collector Started')
     while True:
@@ -127,12 +127,12 @@ async def garbage():
             gap = curr - obj.lasttime
             if gap > cuttime:
                 logging.info(f'Terminating Scrapping Instance: {obj.chan}')
-                await obj.chan.send("This scrapper instance has been closed.")
+                await obj.chan.send("This scraper instance has been closed.")
                 place = obj_links.index(obj)
                 del channels[place]
                 del obj_links[place]
             elif gap > warn:
-                await obj.chan.send("This scrapper instance will be closed in 1 hour unless used.")
+                await obj.chan.send("This scraper instance will be closed in 1 hour unless used.")
         await asyncio.sleep(3600)
 
 
@@ -145,13 +145,13 @@ async def on_guild_join(guild):
     while True:
         try:
             await guild.text_channels[i].send("Hello, this is a bot designed to scrap course information & availability"
-                    " from UBC website.\nIn order to use, first start a Scrapper instance using !scrapper.\n Then"
+                    " from UBC website.\nIn order to use, first start a Scraper instance using !scraper.\n Then"
                     " set the url to the course overview url using \"!set-url:---\", assign the bot a role to ping"
                     " when there is space using \"!set-role:---\".\nYou should further specify if there are"
                     " labs/discussions included on the page.\nYou can further specify which sections to check.\nThen"
-                    " you just need to run Scrapper using then \"!run\" command.\nThe bot is will run itself every 10"
+                    " you just need to run Scraper using then \"!run\" command.\nThe bot is will run itself every 10"
                     " minutes.\nYou can run a different instance of the bot in a separate channel allowing for multiple"
-                    " course Scrappers.\nTo find all runnable commands run !help.\n\nIn order to any propose changes,"
+                    " course Scrapers.\nTo find all runnable commands run !help.\n\nIn order to any propose changes,"
                     " please get in contact with the bot creator.")
             break
         except discord.errors.Forbidden:
@@ -324,18 +324,18 @@ async def on_message(message):
 
         # Admin commands
         elif admins.__contains__(message.author.id) or bypass:
-            if "!scrapper" == msg:
+            if "!scraper" == msg:
                 if channels.__contains__(channel):
-                    await message.channel.send("This channel already has a scrapper, run !end to end it")
+                    await message.channel.send("This channel already has a scraper, run !end to end it")
                 else:
                     logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Creating Scrapping Instance: {channel}')
-                    await message.channel.send("Created scrapper instance for channel")
+                    await message.channel.send("Created scraper instance for channel")
                     channels.append(channel)
-                    obj_links.append(Scrapper(message.channel, ''))
+                    obj_links.append(Scraper(message.channel, ''))
 
             elif "!res:" == msg[:5]:
                 if channels.__contains__(channel):
-                    await message.channel.send("This channel already has a scrapper, end its instance using !end first"
+                    await message.channel.send("This channel already has a scraper, end its instance using !end first"
                                                " then send this command again.")
                 else:
                     temp = binascii.a2b_hex(message.content[5:])
@@ -345,8 +345,8 @@ async def on_message(message):
                     else:
                         channels.append(channel)
                         temp = str(result)[2:][:-1]
-                        obj_links.append(Scrapper(message.channel, temp))
-                        await message.channel.send("Instance recalled. Scrapper ready to run.")
+                        obj_links.append(Scraper(message.channel, temp))
+                        await message.channel.send("Instance recalled. Scraper ready to run.")
                         logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Restarting Scrapping Instance: {channel} with' +
                                      f' inputs: {result}')
 
@@ -357,7 +357,7 @@ async def on_message(message):
                 if "!end" == msg:
                     del channels[place]
                     del obj_links[place]
-                    await message.channel.send("Scrapper instance for channel closed")
+                    await message.channel.send("Scraper instance for channel closed")
                     logging.info(f'Admin Com.     {message.author.name} ({message.author.id}) Closing scrapping instance {channel}')
 
                 # elif "!print" == msg:
@@ -366,7 +366,7 @@ async def on_message(message):
                 elif "!hash" == msg:
                     temp = obj.restart()
                     if temp is True:
-                        await message.channel.send("The Scrapper is not ready to be run, hence cannot generate a code.")
+                        await message.channel.send("The Scraper is not ready to be run, hence cannot generate a code.")
                     else:
                         val = temp.hex()
                         val = "!res:" + val
@@ -557,7 +557,7 @@ async def ping(obj, message):
 
 # Web Scrapping code, copied to not have multiple files.
 
-class Scrapper(object):
+class Scraper(object):
     chan = None
     url = ''
     labs = False
@@ -754,7 +754,7 @@ class Scrapper(object):
         self.waitlist = inp
         print("Waitlist changed to: " + str(inp))
 
-    # Scrapper code
+    # Scraper code
     def __main__(self):
         self.status = []
         self.course = []
